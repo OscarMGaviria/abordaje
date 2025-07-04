@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema FIDS - Embarcaciones</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Estilos del Login */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-form {
+            background: #222;
+            padding: 40px;
+            border-radius: 10px;
+            border: 3px solid #FFD700;
+            min-width: 350px;
+            text-align: center;
+        }
+
+        .login-title {
+            color: #FFD700;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #FFD700;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-error {
+            color: #ff4444;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: none;
+            color: #FFD700;
+            margin-top: 15px;
+        }
+
+        /* Estilos originales del FIDS */
+        .fids-container {
+            width: 100%;
+            min-height: 100vh;
+            background: #000;
+            overflow-x: hidden;
+            display: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #000;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            font-weight: bold;
+            border-bottom: 3px solid #333;
+            position: relative;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            background: #000;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #FFD700;
+        }
+
+        .header-text {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .logout-button {
+            position: absolute;
+            right: 30px;
+            background: #000;
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .logout-button:hover {
+            background: #FFD700;
+            color: #000;
+        }
+
+        .main-table {
+            width: 100%;
+            background: #000;
+            border-collapse: collapse;
+        }
+
+        .category-header {
+            background: #333;
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            padding: 12px 8px;
+            border: 1px solid #555;
+            letter-spacing: 1px;
+        }
+
+        .vessel-cell {
+            background: #000;
+            color: #fff;
+            padding: 8px 12px;
+            border: 1px solid #333;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            vertical-align: top;
+            width: 16.66%;
+        }
+
+        .vessel-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+            padding: 4px 0;
+        }
+
+        .vessel-number {
+            background: #FFD700;
+            color: #000;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+            min-width: 25px;
+            text-align: center;
+            font-size: 12px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .vessel-name {
+            color: #fff;
+            font-size: 12px;
+            margin-right: 8px;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .vessel-status {
+            font-weight: bold;
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 2px;
+            text-align: center;
+            min-width: 60px;
+            flex-shrink: 0;
+            color: #fff;
+        }
+
+        .status-en-turno {
+            background: transparent;
+            color: #fff;
+        }
+
+        .status-embarcando {
+            background: #0066ff;
+            color: #ffffff;
+        }
+
+        .status-suspendido {
+            background: transparent;
+            color: #ff4444;
+        }
+
+        .bottom-clock {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #222;
+            color: #FFD700;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid #FFD700;
+            text-align: center;
+            min-width: 200px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .bottom-clock .date {
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #FFA500;
+        }
+
+        .bottom-clock .time {
+            font-size: 18px;
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        @media (max-width: 1200px) {
+            .vessel-cell {
+                width: 33.33%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .vessel-cell {
+                width: 50%;
+            }
+            
+            .header-text {
+                font-size: 20px;
+            }
+
+            .login-form {
+                min-width: 300px;
+                margin: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .vessel-cell {
+                width: 100%;
+            }
+
+            .login-form {
+                min-width: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Pantalla de Login -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-form">
+            <div class="login-title">
+                <span>⚓</span>
+                Sistema FIDS
+            </div>
+            <form id="loginForm">
+                <input type="email" id="email" class="login-input" placeholder="Correo electrónico" required>
+                <input type="password" id="password" class="login-input" placeholder="Contraseña" required>
+                <button type="submit" class="login-button" id="loginButton">Iniciar Sesión</button>
+            </form>
+            <div class="loading" id="loading">Cargando...</div>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+
+    <!-- Sistema FIDS Principal -->
+    <div class="fids-container" id="fidsContainer">
+        <div class="bottom-clock" id="bottomClock">
+            <div class="date" id="bottomDate"></div>
+            <div class="time" id="bottomTime"></div>
+        </div>
+        
+        <div class="header">
+            <div class="header-icon">⚓</div>
+            <div class="header-text">Sistema de transporte fluvial Guatapé</div>
+            <button class="logout-button" id="logoutButton">Cerrar Sesión</button>
+        </div>
+
+        <table class="main-table">
+            <tr>
+                <td class="category-header">LANCHA TAXI</td>
+                <td class="category-header">DEPORTIVA</td>
+                <td class="category-header">PLANCHÓN</td>
+                <td class="category-header">CARGUERO</td>
+                <td class="category-header">BARCO</td>
+                <td class="category-header">YATE</td>
+            </tr>
+            <tr>
+                <td class="vessel-cell" id="lancha-taxi"></td>
+                <td class="vessel-cell" id="deportiva"></td>
+                <td class="vessel-cell" id="planchon"></td>
+                <td class="vessel-cell" id="carguero"></td>
+                <td class="vessel-cell" id="barco"></td>
+                <td class="vessel-cell" id="yate"></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { getFirestore, collection, getDocs, query, where, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDdjYoi4BSBFFAuXumLxj-NMQWUVSFdSv4",
+            authDomain: "contratos-5e932.firebaseapp.com",
+            projectId: "contratos-5e932",
+            storageBucket: "contratos-5e932.firebasestorage.app",
+            messagingSenderId: "945849105278",
+            appId: "1:945849105278:web:f0291a411b8e33327a112f"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Referencias a elementos del DOM
+        const loginContainer = document.getElementById('loginContainer');
+        const fidsContainer = document.getElementById('fidsContainer');
+        const loginForm = document.getElementById('loginForm');
+        const loginButton = document.getElementById('loginButton');
+        const logoutButton = document.getElementById('logoutButton');
+        const loading = document.getElementById('loading');
+        const loginError = document.getElementById('loginError');
+
+        // Mapeo de categorías
+        const categorias = {
+            'barco': 'barco',
+            'lancha-taxi': 'lancha-taxi', 
+            'deportiva': 'deportiva',
+            'planchon': 'planchon',
+            'carguero': 'carguero',
+            'yate': 'yate'
+        };
+
+        // Variable para almacenar los datos de embarcaciones
+        let embarcacionesData = {};
+        let unsubscribeListener = null;
+
+        // Función para mostrar errores
+        function showError(message) {
+            loginError.textContent = message;
+            loginError.style.display = 'block';
+        }
+
+        // Función para ocultar errores
+        function hideError() {
+            loginError.style.display = 'none';
+        }
+
+        // Función para mostrar loading
+        function showLoading() {
+            loading.style.display = 'block';
+            loginButton.disabled = true;
+        }
+
+        // Función para ocultar loading
+        function hideLoading() {
+            loading.style.display = 'none';
+            loginButton.disabled = false;
+        }
+
+        // Función de login
+        async function login(email, password) {
+            try {
+                showLoading();
+                hideError();
+                
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                console.log('Usuario logueado:', userCredential.user.email);
+                
+            } catch (error) {
+                console.error('Error de login:', error);
+                let errorMessage = 'Error al iniciar sesión';
+                
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'Usuario no encontrado';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Contraseña incorrecta';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Email inválido';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Demasiados intentos. Intenta más tarde';
+                        break;
+                    default:
+                        errorMessage = 'Error: ' + error.message;
+                }
+                
+                showError(errorMessage);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Función para logout
+        async function logout() {
+            try {
+                // Limpiar listener antes de cerrar sesión
+                cleanupFirebaseListener();
+                await signOut(auth);
+                console.log('Usuario deslogueado');
+            } catch (error) {
+                console.error('Error al cerrar sesión:', error);
+            }
+        }
+
+        // Función para cargar datos de Firebase con listener en tiempo real optimizado
+        function setupFirebaseListener() {
+            try {
+                console.log('Configurando listener optimizado de Firebase...');
+                
+                // Limpiar datos anteriores
+                embarcacionesData = {
+                    'lancha-taxi': [],
+                    'deportiva': [],
+                    'planchon': [],
+                    'carguero': [],
+                    'barco': [],
+                    'yate': []
+                };
+
+                // Configurar consulta con listener en tiempo real
+                const q = query(
+                    collection(db, 'embarcaciones'),
+                    where('activa', '==', true)
+                );
+                
+                // Configurar listener optimizado que solo procesa cambios específicos
+                unsubscribeListener = onSnapshot(q, 
+                    (querySnapshot) => {
+                        // Verificar si es la primera carga o hay cambios específicos
+                        if (querySnapshot.metadata.hasPendingWrites) {
+                            console.log('⏳ Cambios pendientes de escribir...');
+                            return;
+                        }
+
+                        let hasChanges = false;
+                        let changedDocs = [];
+                        let addedDocs = [];
+                        let removedDocs = [];
+
+                        // Analizar cambios específicos
+                        querySnapshot.docChanges().forEach((change) => {
+                            const data = change.doc.data();
+                            const docInfo = {
+                                id: change.doc.id,
+                                data: data,
+                                type: change.type
+                            };
+
+                            switch (change.type) {
+                                case 'added':
+                                    addedDocs.push(docInfo);
+                                    hasChanges = true;
+                                    console.log('➕ Embarcación agregada:', data.nombre);
+                                    break;
+                                case 'modified':
+                                    changedDocs.push(docInfo);
+                                    hasChanges = true;
+                                    console.log('🔄 Embarcación modificada:', data.nombre, '- Nuevo estado:', data.estado);
+                                    break;
+                                case 'removed':
+                                    removedDocs.push(docInfo);
+                                    hasChanges = true;
+                                    console.log('➖ Embarcación removida:', data.nombre);
+                                    break;
+                            }
+                        });
+
+                        // Si no hay cambios reales, no procesar
+                        if (!hasChanges && Object.keys(embarcacionesData['lancha-taxi']).length > 0) {
+                            console.log('ℹ️ Sin cambios reales detectados');
+                            return;
+                        }
+
+                        // Procesar cambios de manera eficiente
+                        if (querySnapshot.docChanges().length === querySnapshot.size) {
+                            // Primera carga o cambio masivo - cargar todo
+                            console.log('📡 Carga inicial o cambio masivo - Procesando todos los documentos');
+                            processAllDocuments(querySnapshot);
+                        } else {
+                            // Solo cambios específicos - actualizar incrementalmente
+                            console.log('⚡ Actualizando solo documentos cambiados:', querySnapshot.docChanges().length, 'cambios');
+                            processIncrementalChanges(querySnapshot.docChanges());
+                        }
+                        
+                        // Mostrar indicador de actualización
+                        showUpdateIndicator();
+                        
+                        // Log de estadísticas
+                        const totalEmbarcaciones = Object.values(embarcacionesData).reduce((total, cat) => total + cat.length, 0);
+                        console.log('📊 Total embarcaciones activas:', totalEmbarcaciones);
+                    },
+                    (error) => {
+                        console.error('❌ Error en el listener de Firebase:', error);
+                        
+                        // Mostrar mensaje de error en la interfaz
+                        Object.keys(embarcacionesData).forEach(categoryId => {
+                            const container = document.getElementById(categoryId);
+                            if (container) {
+                                container.innerHTML = '<div class="no-data">Error de conexión</div>';
+                            }
+                        });
+                    }
+                );
+                
+            } catch (error) {
+                console.error('Error al configurar listener:', error);
+            }
+        }
+
+        // Función para procesar todos los documentos (carga inicial)
+        function processAllDocuments(querySnapshot) {
+            // Limpiar datos antes de recargar
+            embarcacionesData = {
+                'lancha-taxi': [],
+                'deportiva': [],
+                'planchon': [],
+                'carguero': [],
+                'barco': [],
+                'yate': []
+            };
+
+            const tempData = [];
+            
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                tempData.push({
+                    id: doc.id,
+                    nombre: data.nombre,
+                    estado: data.estado,
+                    categoria: data.categoria,
+                    posicion: data.posicion || 0
+                });
+            });
+
+            // Ordenar y distribuir por categorías
+            tempData.sort((a, b) => a.posicion - b.posicion);
+            
+            tempData.forEach((embarcacion) => {
+                const categoria = embarcacion.categoria;
+                if (embarcacionesData[categoria]) {
+                    embarcacionesData[categoria].push({
+                        id: embarcacion.id,
+                        nombre: embarcacion.nombre,
+                        estado: embarcacion.estado,
+                        posicion: embarcacion.posicion
+                    });
+                }
+            });
+
+            console.log('✅ Datos recargados completamente');
+            updateAllCategories();
+        }
+
+        // Función para procesar solo cambios incrementales
+        function processIncrementalChanges(docChanges) {
+            docChanges.forEach((change) => {
+                const data = change.doc.data();
+                const embarcacion = {
+                    id: change.doc.id,
+                    nombre: data.nombre,
+                    estado: data.estado,
+                    categoria: data.categoria,
+                    posicion: data.posicion || 0
+                };
+
+                switch (change.type) {
+                    case 'added':
+                        addEmbarcacionToCategory(embarcacion);
+                        break;
+                    case 'modified':
+                        updateEmbarcacionInCategory(embarcacion);
+                        break;
+                    case 'removed':
+                        removeEmbarcacionFromCategory(embarcacion);
+                        break;
+                }
+            });
+
+            // Reordenar todas las categorías después de los cambios
+            reorderAllCategories();
+            updateAllCategories();
+        }
+
+        // Función para agregar embarcación a categoría
+        function addEmbarcacionToCategory(embarcacion) {
+            const categoria = embarcacion.categoria;
+            if (embarcacionesData[categoria]) {
+                embarcacionesData[categoria].push(embarcacion);
+            }
+        }
+
+        // Función para actualizar embarcación en categoría
+        function updateEmbarcacionInCategory(embarcacion) {
+            const categoria = embarcacion.categoria;
+            if (embarcacionesData[categoria]) {
+                const index = embarcacionesData[categoria].findIndex(e => e.id === embarcacion.id);
+                if (index !== -1) {
+                    embarcacionesData[categoria][index] = embarcacion;
+                } else {
+                    // Si no está, agregarla (podría haber cambiado de categoría)
+                    embarcacionesData[categoria].push(embarcacion);
+                }
+            }
+            
+            // Remover de otras categorías si cambió de categoría
+            Object.keys(embarcacionesData).forEach(cat => {
+                if (cat !== categoria) {
+                    embarcacionesData[cat] = embarcacionesData[cat].filter(e => e.id !== embarcacion.id);
+                }
+            });
+        }
+
+        // Función para remover embarcación de categoría
+        function removeEmbarcacionFromCategory(embarcacion) {
+            Object.keys(embarcacionesData).forEach(categoria => {
+                embarcacionesData[categoria] = embarcacionesData[categoria].filter(e => e.id !== embarcacion.id);
+            });
+        }
+
+        // Función para reordenar todas las categorías
+        function reorderAllCategories() {
+            Object.keys(embarcacionesData).forEach(categoria => {
+                embarcacionesData[categoria].sort((a, b) => a.posicion - b.posicion);
+            });
+        }
+
+        // Función para limpiar el listener
+        function cleanupFirebaseListener() {
+            if (unsubscribeListener) {
+                console.log('🔌 Desconectando listener de Firebase');
+                unsubscribeListener();
+                unsubscribeListener = null;
+            }
+        }
+
+        // Función para mostrar indicador de actualización
+        function showUpdateIndicator() {
+            const clock = document.getElementById('clock');
+            const bottomClock = document.getElementById('bottomClock');
+            
+            if (clock) {
+                // Agregar efecto visual de actualización al reloj superior
+                clock.style.boxShadow = '0 0 10px #FFD700';
+                setTimeout(() => {
+                    clock.style.boxShadow = '2px 2px 5px rgba(255, 215, 0, 0.3)';
+                }, 500);
+            }
+
+            if (bottomClock) {
+                // Agregar efecto visual de actualización al reloj inferior
+                bottomClock.style.boxShadow = '0 0 15px #FFD700';
+                setTimeout(() => {
+                    bottomClock.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+                }, 500);
+            }
+        }
+
+        // Función para obtener clase CSS del estado
+        function getStatusClass(status) {
+            switch(status) {
+                case 'EN TURNO': return 'status-en-turno';
+                case 'EMBARCANDO': return 'status-embarcando';
+                case 'SUSPENDIDO': return 'status-suspendido';
+                default: return 'status-en-turno';
+            }
+        }
+
+        // Función para poblar una categoría
+        function populateCategory(categoryId, vessels) {
+            const container = document.getElementById(categoryId);
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (!vessels || vessels.length === 0) {
+                const noData = document.createElement('div');
+                noData.className = 'no-data';
+                noData.textContent = 'Sin embarcaciones';
+                container.appendChild(noData);
+                return;
+            }
+            
+            vessels.forEach((vessel, index) => {
+                const row = document.createElement('div');
+                row.className = 'vessel-row';
+                
+                row.innerHTML = `
+                    <div class="vessel-number">${(index + 1).toString().padStart(2, '0')}</div>
+                    <div class="vessel-name">${vessel.nombre}</div>
+                    <div class="vessel-status ${getStatusClass(vessel.estado)}">${vessel.estado}</div>
+                `;
+                
+                container.appendChild(row);
+            });
+        }
+
+        // Función para actualizar todas las categorías
+        function updateAllCategories() {
+            Object.keys(embarcacionesData).forEach(categoryId => {
+                populateCategory(categoryId, embarcacionesData[categoryId]);
+            });
+        }
+
+        // Función para actualizar el reloj
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('es-CO', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const dateString = now.toLocaleDateString('es-CO');
+            
+            // Reloj superior (compacto)
+            const clockElement = document.getElementById('clock');
+            if (clockElement) {
+                clockElement.textContent = `${dateString} ${timeString}`;
+            }
+
+            // Reloj inferior (detallado)
+            const bottomDateElement = document.getElementById('bottomDate');
+            const bottomTimeElement = document.getElementById('bottomTime');
+            
+            if (bottomDateElement && bottomTimeElement) {
+                // Fecha más detallada
+                const detailedDate = now.toLocaleDateString('es-CO', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                bottomDateElement.textContent = detailedDate.charAt(0).toUpperCase() + detailedDate.slice(1);
+                bottomTimeElement.textContent = timeString;
+            }
+        }
+
+        // Event listeners
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            login(email, password);
+        });
+
+        logoutButton.addEventListener('click', logout);
+
+        // Observer de estado de autenticación
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuario logueado
+                console.log('Usuario autenticado:', user.email);
+                loginContainer.style.display = 'none';
+                fidsContainer.style.display = 'block';
+                
+                // Configurar listener de Firebase (reemplaza la carga manual)
+                setupFirebaseListener();
+                
+                // Inicializar reloj
+                updateClock();
+                setInterval(updateClock, 1000);
+                
+            } else {
+                // Usuario no logueado
+                console.log('Usuario no autenticado');
+                
+                // Limpiar listener
+                cleanupFirebaseListener();
+                
+                loginContainer.style.display = 'flex';
+                fidsContainer.style.display = 'none';
+                
+                // Limpiar formulario
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+                hideError();
+                hideLoading();
+            }
+        });
+
+        // Función para cerrar sesión automáticamente al recargar/refrescar la página
+        function setupAutoLogoutOnRefresh() {
+            // Detectar recarga de página y cerrar sesión
+            window.addEventListener('beforeunload', () => {
+                if (auth.currentUser) {
+                    console.log('🔄 Página recargándose - Cerrando sesión automáticamente');
+                    signOut(auth);
+                }
+            });
+
+            // Detectar si la página se está cargando después de un refresh
+            window.addEventListener('load', () => {
+                if (auth.currentUser) {
+                    console.log('🔄 Página recargada - Cerrando sesión por seguridad');
+                    signOut(auth);
+                }
+            });
+
+            // Detectar cambios de visibilidad de la página
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    // La página se oculta (cambio de pestaña, minimizar, etc.)
+                    console.log('👁️ Página oculta');
+                } else {
+                    // La página vuelve a ser visible
+                    console.log('👁️ Página visible');
+                    // Opcional: aquí podrías agregar lógica adicional si quieres cerrar sesión al cambiar pestañas
+                }
+            });
+        }
+
+        // Inicializar auto-logout al cargar la página
+        setupAutoLogoutOnRefresh();
+
+        // Manejar errores de autenticación automáticamente
+        auth.onAuthStateChanged = onAuthStateChanged;
+
+    </script>
+</body>
+</html>
