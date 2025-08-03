@@ -113,7 +113,6 @@
             min-height: 100vh;
             background: #000;
             overflow-x: hidden;
-            display: none;
         }
 
         .header {
@@ -146,23 +145,6 @@
             letter-spacing: 1px;
         }
 
-        .logout-button {
-            position: absolute;
-            right: 30px;
-            background: #000;
-            color: #FFD700;
-            border: 2px solid #FFD700;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .logout-button:hover {
-            background: #FFD700;
-            color: #000;
-        }
 
         .main-table {
             width: 100%;
@@ -317,25 +299,10 @@
     </style>
 </head>
 <body>
-    <!-- Pantalla de Login -->
-    <div class="login-container" id="loginContainer">
-        <div class="login-form">
-            <div class="login-title">
-                <span>⚓</span>
-                Sistema FIDS
-            </div>
-            <form id="loginForm">
-                <input type="email" id="email" class="login-input" placeholder="Correo electrónico" required>
-                <input type="password" id="password" class="login-input" placeholder="Contraseña" required>
-                <button type="submit" class="login-button" id="loginButton">Iniciar Sesión</button>
-            </form>
-            <div class="loading" id="loading">Cargando...</div>
-            <div class="login-error" id="loginError"></div>
-        </div>
-    </div>
+
 
     <!-- Sistema FIDS Principal -->
-    <div class="fids-container" id="fidsContainer">
+    <div class="fids-container">
         <div class="bottom-clock" id="bottomClock">
             <div class="date" id="bottomDate"></div>
             <div class="time" id="bottomTime"></div>
@@ -344,7 +311,6 @@
         <div class="header">
             <div class="header-icon">⚓</div>
             <div class="header-text">Sistema de transporte fluvial Guatapé</div>
-            <button class="logout-button" id="logoutButton">Cerrar Sesión</button>
         </div>
 
         <table class="main-table">
@@ -370,7 +336,6 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
         import { getFirestore, collection, getDocs, query, where, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
         // Configuración de Firebase
@@ -385,17 +350,7 @@
 
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
-
-        // Referencias a elementos del DOM
-        const loginContainer = document.getElementById('loginContainer');
-        const fidsContainer = document.getElementById('fidsContainer');
-        const loginForm = document.getElementById('loginForm');
-        const loginButton = document.getElementById('loginButton');
-        const logoutButton = document.getElementById('logoutButton');
-        const loading = document.getElementById('loading');
-        const loginError = document.getElementById('loginError');
 
         // Mapeo de categorías
         const categorias = {
@@ -411,81 +366,9 @@
         let embarcacionesData = {};
         let unsubscribeListener = null;
 
-        // Función para mostrar errores
-        function showError(message) {
-            loginError.textContent = message;
-            loginError.style.display = 'block';
-        }
-
-        // Función para ocultar errores
-        function hideError() {
-            loginError.style.display = 'none';
-        }
-
-        // Función para mostrar loading
-        function showLoading() {
-            loading.style.display = 'block';
-            loginButton.disabled = true;
-        }
-
-        // Función para ocultar loading
-        function hideLoading() {
-            loading.style.display = 'none';
-            loginButton.disabled = false;
-        }
-
-        // Función de login
-        async function login(email, password) {
-            try {
-                showLoading();
-                hideError();
-                
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                console.log('Usuario logueado:', userCredential.user.email);
-                
-            } catch (error) {
-                console.error('Error de login:', error);
-                let errorMessage = 'Error al iniciar sesión';
-                
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                        errorMessage = 'Usuario no encontrado';
-                        break;
-                    case 'auth/wrong-password':
-                        errorMessage = 'Contraseña incorrecta';
-                        break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Email inválido';
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = 'Demasiados intentos. Intenta más tarde';
-                        break;
-                    default:
-                        errorMessage = 'Error: ' + error.message;
-                }
-                
-                showError(errorMessage);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Función para logout
-        async function logout() {
-            try {
-                // Limpiar listener antes de cerrar sesión
-                cleanupFirebaseListener();
-                await signOut(auth);
-                console.log('Usuario deslogueado');
-            } catch (error) {
-                console.error('Error al cerrar sesión:', error);
-            }
-        }
-
         // Función para cargar datos de Firebase con listener en tiempo real optimizado
         function setupFirebaseListener() {
             try {
-                console.log('Configurando listener optimizado de Firebase...');
                 
                 // Limpiar datos anteriores
                 embarcacionesData = {
@@ -508,7 +391,7 @@
                     (querySnapshot) => {
                         // Verificar si es la primera carga o hay cambios específicos
                         if (querySnapshot.metadata.hasPendingWrites) {
-                            console.log('⏳ Cambios pendientes de escribir...');
+                            console.log('');
                             return;
                         }
 
@@ -530,35 +413,30 @@
                                 case 'added':
                                     addedDocs.push(docInfo);
                                     hasChanges = true;
-                                    console.log('➕ Embarcación agregada:', data.nombre);
                                     break;
                                 case 'modified':
                                     changedDocs.push(docInfo);
                                     hasChanges = true;
-                                    console.log('🔄 Embarcación modificada:', data.nombre, '- Nuevo estado:', data.estado);
                                     break;
                                 case 'removed':
                                     removedDocs.push(docInfo);
                                     hasChanges = true;
-                                    console.log('➖ Embarcación removida:', data.nombre);
                                     break;
                             }
                         });
 
                         // Si no hay cambios reales, no procesar
                         if (!hasChanges && Object.keys(embarcacionesData['lancha-taxi']).length > 0) {
-                            console.log('ℹ️ Sin cambios reales detectados');
+                            console.log('');
                             return;
                         }
 
                         // Procesar cambios de manera eficiente
                         if (querySnapshot.docChanges().length === querySnapshot.size) {
                             // Primera carga o cambio masivo - cargar todo
-                            console.log('📡 Carga inicial o cambio masivo - Procesando todos los documentos');
                             processAllDocuments(querySnapshot);
                         } else {
                             // Solo cambios específicos - actualizar incrementalmente
-                            console.log('⚡ Actualizando solo documentos cambiados:', querySnapshot.docChanges().length, 'cambios');
                             processIncrementalChanges(querySnapshot.docChanges());
                         }
                         
@@ -567,11 +445,8 @@
                         
                         // Log de estadísticas
                         const totalEmbarcaciones = Object.values(embarcacionesData).reduce((total, cat) => total + cat.length, 0);
-                        console.log('📊 Total embarcaciones activas:', totalEmbarcaciones);
                     },
-                    (error) => {
-                        console.error('❌ Error en el listener de Firebase:', error);
-                        
+                    (error) => {                        
                         // Mostrar mensaje de error en la interfaz
                         Object.keys(embarcacionesData).forEach(categoryId => {
                             const container = document.getElementById(categoryId);
@@ -583,7 +458,7 @@
                 );
                 
             } catch (error) {
-                console.error('Error al configurar listener:', error);
+                console.error("");
             }
         }
 
@@ -626,8 +501,6 @@
                     });
                 }
             });
-
-            console.log('✅ Datos recargados completamente');
             updateAllCategories();
         }
 
@@ -707,7 +580,6 @@
         // Función para limpiar el listener
         function cleanupFirebaseListener() {
             if (unsubscribeListener) {
-                console.log('🔌 Desconectando listener de Firebase');
                 unsubscribeListener();
                 unsubscribeListener = null;
             }
@@ -816,79 +688,17 @@
             }
         }
 
-        // Event listeners
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            login(email, password);
-        });
-
-        logoutButton.addEventListener('click', logout);
-
         // Observer de estado de autenticación
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // Usuario logueado
-                console.log('Usuario autenticado:', user.email);
-                loginContainer.style.display = 'none';
-                fidsContainer.style.display = 'block';
-                
-                // Configurar listener de Firebase (reemplaza la carga manual)
-                setupFirebaseListener();
-                
-                // Inicializar reloj
-                updateClock();
-                setInterval(updateClock, 1000);
-                
-            } else {
-                // Usuario no logueado
-                console.log('Usuario no autenticado');
-                
-                // Limpiar listener
-                cleanupFirebaseListener();
-                
-                loginContainer.style.display = 'flex';
-                fidsContainer.style.display = 'none';
-                
-                // Limpiar formulario
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
-                hideError();
-                hideLoading();
-            }
+        document.addEventListener('DOMContentLoaded', () => {          
+            // Configurar listener de Firebase
+            setupFirebaseListener();
+            
+            // Inicializar reloj
+            updateClock();
+            setInterval(updateClock, 1000);
         });
 
-        // Función para cerrar sesión automáticamente al recargar/refrescar la página
-        function setupAutoLogoutOnRefresh() {
-            // Detectar recarga de página y cerrar sesión
-            window.addEventListener('beforeunload', () => {
-                if (auth.currentUser) {
-                    console.log('🔄 Página recargándose - Cerrando sesión automáticamente');
-                    signOut(auth);
-                }
-            });
 
-            // Detectar si la página se está cargando después de un refresh
-            window.addEventListener('load', () => {
-                if (auth.currentUser) {
-                    console.log('🔄 Página recargada - Cerrando sesión por seguridad');
-                    signOut(auth);
-                }
-            });
-
-            // Detectar cambios de visibilidad de la página
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    // La página se oculta (cambio de pestaña, minimizar, etc.)
-                    console.log('👁️ Página oculta');
-                } else {
-                    // La página vuelve a ser visible
-                    console.log('👁️ Página visible');
-                    // Opcional: aquí podrías agregar lógica adicional si quieres cerrar sesión al cambiar pestañas
-                }
-            });
-        }
 
         // Inicializar auto-logout al cargar la página
         setupAutoLogoutOnRefresh();
